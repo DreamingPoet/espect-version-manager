@@ -55,7 +55,7 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 780,
+        "height": 800,
         "resizable": false,
         "title": "Espect 版本管理器 v1.0",
         "width": 500
