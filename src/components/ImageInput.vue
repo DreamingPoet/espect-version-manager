@@ -1,6 +1,6 @@
 <template>
-  <el-upload class="image-uploader" action="" :show-file-list="false" :before-upload="beforeImageUpload"
-    :auto-upload="true">
+  <el-upload class="image-uploader" ref="upload" action="" :show-file-list="false" :on-change="onImageChange" :limit="1"
+    :auto-upload="false">
     <img v-if="imageUrl" :src="imageUrl" class="image" />
     <el-icon v-else class="image-uploader-icon">
       <Plus />
@@ -9,7 +9,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ElMessage } from 'element-plus'
+import { ElMessage, UploadInstance } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 
 import type { UploadProps } from 'element-plus'
@@ -17,7 +17,7 @@ import type { UploadProps } from 'element-plus'
 
 // 数据绑定组件到组件
 // 关于组件通信见微信公众号 "web前端开发" 的 7个 Vue 3 中的组件通信方式
-import {defineProps } from 'vue'
+import { defineProps, ref } from 'vue'
 
 // 本案例使用 v-model 的方式, 因为该子组件及其父组件都需要修改该变量
 // 在子组件中定义一个变量的名称及其类型
@@ -29,32 +29,33 @@ const props = defineProps({
   },
 })
 
+// 绑定到上传的组件上，方便接下来清除文件数组
+const upload = ref<UploadInstance>()
 
-  // 定义更新到父组件中的变量的函数
+// 定义更新到父组件中的变量的函数
 const emits = defineEmits(['update:imageUrl'])
 
-const beforeImageUpload: UploadProps['beforeUpload'] = (rawFile) => {
-  if (rawFile.type !== 'image/jpeg' && rawFile.type !== 'image/png') {
+const onImageChange: UploadProps['onChange'] = (rawFile) => {
+
+  // 必须清除，才能触发OnChange
+  upload.value!.clearFiles()
+
+  if (rawFile.raw?.type !== 'image/jpeg' && rawFile.raw?.type !== 'image/png') {
     ElMessage.error('仅支持 JPG 和 PNG 格式!')
     return false
-  } else if (rawFile.size / 1024 / 1024 > 1) {
+  } else if (rawFile.raw?.size / 1024 / 1024 > 1) {
     ElMessage.error('图片大小不能超过 1MB!')
     return false
   }
 
   // 更新到父组件中的变量
   let image_Url = props.imageUrl
-  image_Url = URL.createObjectURL(rawFile!)
+  image_Url = URL.createObjectURL(rawFile.raw!)
   emits('update:imageUrl', image_Url)
-
   return true
 }
 
-
-
-
 </script>
-
 
 <style scoped>
 /* scoped style 只在当前文件有效 */
