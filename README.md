@@ -15,3 +15,17 @@
 前端页面功能：
 1、选择图片
 2、填写 titile 等
+
+
+启动项目：
+git clone
+
+npm install 
+将会安装 package-lock.json 记录的所有依赖包
+
+npm run tauri dev 启动调试（也可进入 src-tauri 执行 cargo run dev）
+
+npm run dev 启动前端页面调试
+
+npm run build 执行构建
+

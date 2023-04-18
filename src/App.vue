@@ -6,19 +6,8 @@
 
       <el-form :model="form" label-width="100px">
 
-
         <el-form-item label="exe文件">
-          <el-upload class="upload-exe" ref="upload" action="" :show-file-list="false" :on-change="onFileChange"
-            :limit="1" :auto-upload="false">
-            <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-            <div class="el-upload__text">
-              点击选择
-            </div>   
-          </el-upload>
-        </el-form-item>
-        
-        <el-form-item label="">
-          <div class="el-upload__tip" v-html="exe_path"></div>
+          <div class="" v-html="exe_path"></div>
         </el-form-item>
 
         <el-form-item label="客户名称">
@@ -64,10 +53,12 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button v-bind:disabled="exe_path==''" type="primary" @click="onSubmit">保存</el-button>
+          <el-button v-bind:disabled="exe_path == ''" type="primary" @click="onSubmit">保存</el-button>
         </el-form-item>
       </el-form>
     </el-main>
+
+
   </el-container>
 </template>
 
@@ -78,13 +69,31 @@ import ImageInput from './components/ImageInput.vue'
 // 与 tauri 后端通信
 import { invoke } from '@tauri-apps/api'
 import { listen, Event } from "@tauri-apps/api/event"
-import { ElMessage, UploadInstance, UploadProps } from 'element-plus'
+import { ElMessage, UploadFile, UploadInstance, UploadProps } from 'element-plus'
 
-import { UploadFilled } from '@element-plus/icons-vue'
+
 
 // 绑定到上传的组件上，方便接下来清除文件数组
 const upload = ref<UploadInstance>()
 const exe_path = ref("")
+
+
+listen('tauri://file-drop', event => {
+
+  
+
+
+  let path = String(event.payload)
+
+  if (path.indexOf('exe') == -1) {
+    ElMessage.error('请传入exe!')
+    return false
+  }
+  exe_path.value = path
+  onLoadData(path)
+  // ElMessage.info("Back data = " + exe_path.value)
+})
+
 
 // 定义表单数据
 const form = reactive({
@@ -102,36 +111,42 @@ const form = reactive({
 })
 
 const onSubmit = () => {
+
+  invoke("save_data", {
+    exefilepath: exe_path.value,
+    customname: form.custom_name,
+    customlogo: form.custom_logo,
+    appname: form.app_name,
+    applogo: form.app_logo,
+    version: form.version,
+    internalversion: form.internal_version,
+    developcompanyname: form.develop_company_name,
+    developcompanynameen: form.develop_company_name_en,
+    contactemail: form.contact_email,
+    copyright: form.copy_right,
+    commitsha: form.commit_sha,
+  }).then(
+    (data) => {
+      ElMessage.info("Back data = " + String(data))
+    }
+  )
+
+
   console.log('submit!')
 }
 
 
 // 点击加载当前目录下的版本信息
 // invoke 传递的参数名称不能带下划线
-const onLoadData = function(exe_path: String) {
+const onLoadData = function (exe_path: String) {
   ElMessage.info("onLoadData = " + exe_path)
-  invoke("load_data", {exefilepath: exe_path}).then(
+  invoke("load_data", { exefilepath: exe_path }).then(
     (data) => {
       ElMessage.info("Back data = " + String(data))
     }
   )
 }
 
-
-const onFileChange: UploadProps['onChange'] = (rawFile) => {
-  upload.value!.clearFiles()
-  // type element as HTMLInputElement
-  const input = document.getElementsByClassName('el-upload__input')[0] as HTMLInputElement
-  let path = input?.value
-  if (path.indexOf('exe') == -1) {
-    ElMessage.error('请传入exe!')
-    return false
-  }
-  exe_path.value = path
-  onLoadData(path)
-
-  return true
-}
 </script>
 
 <style scoped>

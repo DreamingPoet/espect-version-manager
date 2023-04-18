@@ -9,7 +9,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ElMessage, UploadInstance } from 'element-plus'
+import { ElMessage, UploadFile, UploadInstance } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 
 import type { UploadProps } from 'element-plus'
@@ -48,11 +48,39 @@ const onImageChange: UploadProps['onChange'] = (rawFile) => {
     return false
   }
 
-  // 更新到父组件中的变量
-  let image_Url = props.imageUrl
-  image_Url = URL.createObjectURL(rawFile.raw!)
-  emits('update:imageUrl', image_Url)
+  
+  UploadFileToBase64(rawFile)
+    .then(base64String => {
+
+        // 更新到父组件中的变量
+      let image_Url = props.imageUrl
+      // image_Url = URL.createObjectURL(rawFile.raw!)
+      emits('update:imageUrl', "data:image/*;base64," + base64String )
+
+    })
+    .catch(error => {
+      ElMessage.error('图片转码失败!')
+    });
+
+
   return true
+}
+
+
+function UploadFileToBase64(uploadFile: UploadFile): Promise<string> {
+  const file = uploadFile.raw;
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file!);
+    reader.onloadend = function () {
+      const base64String = reader.result?.toString().split(",")[1];
+      if (base64String) {
+        resolve(base64String);
+      } else {
+        reject("Failed to convert file to Base64");
+      }
+    };
+  });
 }
 
 </script>
