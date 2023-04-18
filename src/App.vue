@@ -78,11 +78,42 @@ const upload = ref<UploadInstance>()
 const exe_path = ref("")
 
 
+
+class VersionData {
+  custom_name: string;
+  custom_logo: string;
+  app_name: string;
+  app_logo: string;
+  version: string;
+  internal_version: string;
+  develop_company_name: string;
+  develop_company_name_en: string;
+  contact_email: string;
+  copy_right: string;
+  commit_sha: string;
+
+  // 构造函数
+  constructor(custom_name: string, custom_logo: string, app_name: string, app_logo: string, version: string,
+    internal_version: string, develop_company_name: string, develop_company_name_en: string,
+    contact_email: string, copy_right: string, commit_sha: string
+  ) {
+    this.custom_name = custom_name;
+    this.custom_logo = custom_logo;
+    this.app_name = app_name;
+    this.app_logo = app_logo;
+    this.version = version;
+    this.internal_version = internal_version;
+    this.develop_company_name = develop_company_name;
+    this.develop_company_name_en = develop_company_name_en;
+    this.contact_email = contact_email;
+    this.copy_right = copy_right;
+    this.commit_sha = commit_sha;
+  }
+}
+
+
+
 listen('tauri://file-drop', event => {
-
-
-
-
   let path = String(event.payload)
 
   if (path.indexOf('exe') == -1) {
@@ -131,21 +162,35 @@ const onSubmit = () => {
       ElMessage.info("Back data = " + String(data))
     }
   )
-
-
-  console.log('submit!')
 }
 
 
 // 点击加载当前目录下的版本信息
 // invoke 传递的参数名称不能带下划线
 const onLoadData = function (exe_path: String) {
-  ElMessage.info("onLoadData = " + exe_path)
   invoke("load_data", { exefilepath: exe_path }).then(
     (data) => {
-      ElMessage.info("Back data = " + String(data))
+
+      let version_data: VersionData = JSON.parse(data as string);
+
+      form.custom_name = version_data.custom_name
+      form.custom_logo = version_data.custom_logo
+      form.app_name = version_data.app_name
+      form.app_logo = version_data.app_logo
+      form.version = version_data.version
+      form.internal_version = version_data.internal_version
+      form.develop_company_name = version_data.develop_company_name
+      form.develop_company_name_en = version_data.develop_company_name_en
+      form.contact_email = version_data.contact_email
+      form.copy_right = version_data.copy_right
+      form.commit_sha = version_data.commit_sha
+
+      ElMessage.info("Load succeeded!")
     }
   )
+    .catch((error) => {
+      ElMessage.info("Back data = " + String(error))
+    })
 }
 
 </script>

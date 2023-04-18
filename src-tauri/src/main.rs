@@ -42,7 +42,7 @@ fn greet(name: &str) -> String {
 
 // invoke 接收的参数名称不能带下划线
 #[tauri::command]
-fn load_data(exefilepath: &str) -> String {
+fn load_data(exefilepath: &str) -> Result<String, String> {
     let path = Path::new(exefilepath);
     let mut ue_project_name = "";
     if let Some(file_name) = path.file_stem() {
@@ -50,7 +50,7 @@ fn load_data(exefilepath: &str) -> String {
             ue_project_name = file_name;
         }
     } else {
-        return format!("文件路径错误: {}!", &exefilepath);
+        return Err(format!("文件路径错误: {}!", &exefilepath));
     }
 
     if let Some(ue_project_dir) = path.parent() {
@@ -60,21 +60,18 @@ fn load_data(exefilepath: &str) -> String {
 
             if !Path::new(&data_file_path).exists() {
                 let _ = File::create(&data_file_path);
-                return "当前目录下未找到appdata.dat 文件, 已新建！".to_string();
+                return Err("当前目录下未找到appdata.dat 文件, 已新建！".to_string());
             } else {
-                return exefilepath.to_string();
+                if let Ok(f_str) = fs::read_to_string(data_file_path) {
+
+                    return Ok(crypt_lib::decrypt(&f_str));
+                } else {
+                    return Err(format!("文件读取错误: {}!", &exefilepath));
+                }
             }
         }
-    } else {
-        return format!("save file failed, path error {}!", &exefilepath);
     }
-
-    return exefilepath.to_string();
-    // let file_path = "";
-
-    // let f_str = fs::read_to_string(file_path).unwrap();
-
-    // format!("Hello, {}!", 1)
+    return Err(format!("文件路径错误: {}!", &exefilepath));
 }
 
 #[tauri::command]
@@ -126,8 +123,7 @@ fn save_data(
             let data_file_path =
                 data_file_path.to_string() + "/" + ue_project_name + "/appdata.dat";
 
-            save_data_to_file(&data_str, &data_file_path);
-            return format!("parent is , {:?}!", &ue_project_dir);
+            return save_data_to_file(&data_str, &data_file_path);
         }
     } else {
         return format!("save file failed, path error {}!", &exefilepath);
@@ -136,19 +132,18 @@ fn save_data(
     return format!("save file failed, path error {}!", &exefilepath);
 }
 
-fn save_data_to_file(file_str: &str, path: &str) {
-    println!("save file {}", &path);
+fn save_data_to_file(file_str: &str, path: &str) -> String{
     let mut options = OpenOptions::new();
 
     // truncate(true) 写文件前要先清理所有数据
     if let Ok(mut file) = options.write(true).truncate(true).open(path) {
         if let Ok(_) = file.write_all(file_str.as_bytes()) {
-            println!("save file succeed!! {}", &path);
+            return format!("save file succeed!! {}", &path);
         } else {
-            println!("save file failed1!! {}", &path);
+            return format!("save file failed1!! {}", &path);
         };
     } else {
-        println!("save file failed!! {}", &path);
+        return format!("save file failed!! {}", &path);
     }
 }
 
