@@ -6,7 +6,8 @@
 mod crypt_lib;
 use std::{
     fs::{self, File, OpenOptions},
-    path::Path, io::Write,
+    io::Write,
+    path::Path,
 };
 
 use serde::{Deserialize, Serialize};
@@ -43,26 +44,30 @@ fn greet(name: &str) -> String {
 #[tauri::command]
 fn load_data(exefilepath: &str) -> String {
     let path = Path::new(exefilepath);
-    
-    if let Some(ue_project_dir) = path.parent(){
-        if let Some(data_file_path) = ue_project_dir.to_str(){
-            let data_file_path = data_file_path.to_string() + "appdata.dat";
-            
-            if !Path::new(&data_file_path).exists() {
+    let mut ue_project_name = "";
+    if let Some(file_name) = path.file_stem() {
+        if let Some(file_name) = file_name.to_str() {
+            ue_project_name = file_name;
+        }
+    } else {
+        return format!("文件路径错误: {}!", &exefilepath);
+    }
 
+    if let Some(ue_project_dir) = path.parent() {
+        if let Some(data_file_path) = ue_project_dir.to_str() {
+            let data_file_path =
+                data_file_path.to_string() + "/" + ue_project_name + "/appdata.dat";
+
+            if !Path::new(&data_file_path).exists() {
                 let _ = File::create(&data_file_path);
                 return "当前目录下未找到appdata.dat 文件, 已新建！".to_string();
             } else {
                 return exefilepath.to_string();
             }
         }
-
-    }else {
+    } else {
         return format!("save file failed, path error {}!", &exefilepath);
     }
-
-
-
 
     return exefilepath.to_string();
     // let file_path = "";
@@ -87,7 +92,6 @@ fn save_data(
     copyright: &str,
     commitsha: &str,
 ) -> String {
-
     let test_data = VersionData {
         custom_name: customname.to_string(),
         custom_logo: customlogo.to_string(),
@@ -101,40 +105,52 @@ fn save_data(
         copy_right: copyright.to_string(),
         commit_sha: commitsha.to_string(),
     };
-    
+
     let mut data_str = serde_json::to_string_pretty(&test_data).unwrap();
 
     data_str = crypt_lib::encrypt(&data_str);
 
     let path = Path::new(exefilepath);
-    
-    if let Some(ue_project_dir) = path.parent(){
-        if let Some(data_file_path) = ue_project_dir.to_str(){
-            let data_file_path = data_file_path.to_string() + "appdata.dat";
-            
+
+    let mut ue_project_name = "";
+    if let Some(file_name) = path.file_stem() {
+        if let Some(file_name) = file_name.to_str() {
+            ue_project_name = file_name;
+        }
+    } else {
+        return format!("文件路径错误: {}!", &exefilepath);
+    }
+
+    if let Some(ue_project_dir) = path.parent() {
+        if let Some(data_file_path) = ue_project_dir.to_str() {
+            let data_file_path =
+                data_file_path.to_string() + "/" + ue_project_name + "/appdata.dat";
+
             save_data_to_file(&data_str, &data_file_path);
             return format!("parent is , {:?}!", &ue_project_dir);
         }
-
-    }else {
+    } else {
         return format!("save file failed, path error {}!", &exefilepath);
     }
-
 
     return format!("save file failed, path error {}!", &exefilepath);
 }
 
-
 fn save_data_to_file(file_str: &str, path: &str) {
     println!("save file {}", &path);
     let mut options = OpenOptions::new();
-    if let Ok(mut file) = options.write(true).open(path){
-        let _ = file.write(file_str.as_bytes());
+
+    // truncate(true) 写文件前要先清理所有数据
+    if let Ok(mut file) = options.write(true).truncate(true).open(path) {
+        if let Ok(_) = file.write_all(file_str.as_bytes()) {
+            println!("save file succeed!! {}", &path);
+        } else {
+            println!("save file failed1!! {}", &path);
+        };
     } else {
         println!("save file failed!! {}", &path);
     }
 }
-
 
 #[test]
 fn aes_test() {
@@ -156,9 +172,8 @@ fn aes_test() {
     let a = crypt_lib::encrypt(&data_str);
 
     println!("{}", &a);
-    
-    let dst = crypt_lib::decrypt(&a);
-    
-    println!("{}", &dst);
 
+    let dst = crypt_lib::decrypt(&a);
+
+    println!("{}", &dst);
 }

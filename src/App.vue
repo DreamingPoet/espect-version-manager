@@ -80,7 +80,7 @@ const exe_path = ref("")
 
 listen('tauri://file-drop', event => {
 
-  
+
 
 
   let path = String(event.payload)
@@ -112,6 +112,7 @@ const form = reactive({
 
 const onSubmit = () => {
 
+  console.log(form.custom_logo)
   invoke("save_data", {
     exefilepath: exe_path.value,
     customname: form.custom_name,

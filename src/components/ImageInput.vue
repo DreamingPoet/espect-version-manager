@@ -48,14 +48,14 @@ const onImageChange: UploadProps['onChange'] = (rawFile) => {
     return false
   }
 
-  
+
   UploadFileToBase64(rawFile)
     .then(base64String => {
 
-        // 更新到父组件中的变量
+      // 更新到父组件中的变量
       let image_Url = props.imageUrl
       // image_Url = URL.createObjectURL(rawFile.raw!)
-      emits('update:imageUrl', "data:image/*;base64," + base64String )
+      emits('update:imageUrl', "data:image/*;base64," + base64String)
 
     })
     .catch(error => {
