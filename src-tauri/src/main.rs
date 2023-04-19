@@ -63,7 +63,9 @@ fn load_data(exefilepath: &str) -> Result<String, String> {
                 return Err("当前目录下未找到appdata.dat 文件, 已新建！".to_string());
             } else {
                 if let Ok(f_str) = fs::read_to_string(data_file_path) {
-
+                    if f_str.len() < 7 {
+                        return Err(format!("文件内容不正确: {}!", &exefilepath));
+                    };
                     return Ok(crypt_lib::decrypt(&f_str));
                 } else {
                     return Err(format!("文件读取错误: {}!", &exefilepath));
@@ -132,7 +134,7 @@ fn save_data(
     return format!("save file failed, path error {}!", &exefilepath);
 }
 
-fn save_data_to_file(file_str: &str, path: &str) -> String{
+fn save_data_to_file(file_str: &str, path: &str) -> String {
     let mut options = OpenOptions::new();
 
     // truncate(true) 写文件前要先清理所有数据
